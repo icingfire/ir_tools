@@ -4,7 +4,7 @@
 * compile: gcc -O2 -static -pthread -o fs_collect linux_fs_collect.c
 * usage: ./fs_collect
 * usage: ./fs_collect /$target_dir $thread_cnt    // default: / 8
-* 
+*
 * author: icingfire
 */
 #define _XOPEN_SOURCE 700
@@ -49,21 +49,21 @@ static const uint32_t k256[64] = {
    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 };
 
-static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
-    uint32_t a,b,c,d,e,f,g,h,i,j,t1,t2,m[64];
+static void sha256_transform(SHA256_CTX* ctx, const uint8_t data[]) {
+    uint32_t a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
-    for (i=0,j=0; i < 16; ++i, j+=4)
-        m[i] = ((uint32_t)data[j] << 24) | ((uint32_t)data[j+1] << 16) |
-               ((uint32_t)data[j+2] << 8) | ((uint32_t)data[j+3]);
-    for ( ; i < 64; ++i)
-        m[i] = SIG1(m[i-2]) + m[i-7] + SIG0(m[i-15]) + m[i-16];
+    for (i = 0, j = 0; i < 16; ++i, j += 4)
+        m[i] = ((uint32_t)data[j] << 24) | ((uint32_t)data[j + 1] << 16) |
+        ((uint32_t)data[j + 2] << 8) | ((uint32_t)data[j + 3]);
+    for (; i < 64; ++i)
+        m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
 
     a = ctx->state[0]; b = ctx->state[1]; c = ctx->state[2]; d = ctx->state[3];
     e = ctx->state[4]; f = ctx->state[5]; g = ctx->state[6]; h = ctx->state[7];
 
     for (i = 0; i < 64; ++i) {
-        t1 = h + EP1(e) + CH(e,f,g) + k256[i] + m[i];
-        t2 = EP0(a) + MAJ(a,b,c);
+        t1 = h + EP1(e) + CH(e, f, g) + k256[i] + m[i];
+        t2 = EP0(a) + MAJ(a, b, c);
         h = g; g = f; f = e; e = d + t1;
         d = c; c = b; b = a; a = t1 + t2;
     }
@@ -72,7 +72,7 @@ static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
     ctx->state[4] += e; ctx->state[5] += f; ctx->state[6] += g; ctx->state[7] += h;
 }
 
-static void sha256_init(SHA256_CTX *ctx) {
+static void sha256_init(SHA256_CTX* ctx) {
     ctx->datalen = 0; ctx->bitlen = 0;
     ctx->state[0] = 0x6a09e667; ctx->state[1] = 0xbb67ae85;
     ctx->state[2] = 0x3c6ef372; ctx->state[3] = 0xa54ff53a;
@@ -80,8 +80,8 @@ static void sha256_init(SHA256_CTX *ctx) {
     ctx->state[6] = 0x1f83d9ab; ctx->state[7] = 0x5be0cd19;
 }
 
-static void sha256_update(SHA256_CTX *ctx, const uint8_t data[], size_t len) {
-    for (size_t i=0; i < len; ++i) {
+static void sha256_update(SHA256_CTX* ctx, const uint8_t data[], size_t len) {
+    for (size_t i = 0; i < len; ++i) {
         ctx->data[ctx->datalen++] = data[i];
         if (ctx->datalen == 64) {
             sha256_transform(ctx, ctx->data);
@@ -91,13 +91,14 @@ static void sha256_update(SHA256_CTX *ctx, const uint8_t data[], size_t len) {
     }
 }
 
-static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
+static void sha256_final(SHA256_CTX* ctx, uint8_t hash[]) {
     uint32_t i = ctx->datalen;
 
     if (ctx->datalen < 56) {
         ctx->data[i++] = 0x80;
         while (i < 56) ctx->data[i++] = 0x00;
-    } else {
+    }
+    else {
         ctx->data[i++] = 0x80;
         while (i < 64) ctx->data[i++] = 0x00;
         sha256_transform(ctx, ctx->data);
@@ -115,24 +116,24 @@ static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
     ctx->data[56] = (uint8_t)(ctx->bitlen >> 56);
     sha256_transform(ctx, ctx->data);
 
-    for (i=0; i < 4; ++i) {
-        hash[i    ] = (ctx->state[0] >> (24 - i * 8)) & 0xff;
+    for (i = 0; i < 4; ++i) {
+        hash[i] = (ctx->state[0] >> (24 - i * 8)) & 0xff;
         hash[i + 4] = (ctx->state[1] >> (24 - i * 8)) & 0xff;
         hash[i + 8] = (ctx->state[2] >> (24 - i * 8)) & 0xff;
-        hash[i+12] = (ctx->state[3] >> (24 - i * 8)) & 0xff;
-        hash[i+16] = (ctx->state[4] >> (24 - i * 8)) & 0xff;
-        hash[i+20] = (ctx->state[5] >> (24 - i * 8)) & 0xff;
-        hash[i+24] = (ctx->state[6] >> (24 - i * 8)) & 0xff;
-        hash[i+28] = (ctx->state[7] >> (24 - i * 8)) & 0xff;
+        hash[i + 12] = (ctx->state[3] >> (24 - i * 8)) & 0xff;
+        hash[i + 16] = (ctx->state[4] >> (24 - i * 8)) & 0xff;
+        hash[i + 20] = (ctx->state[5] >> (24 - i * 8)) & 0xff;
+        hash[i + 24] = (ctx->state[6] >> (24 - i * 8)) & 0xff;
+        hash[i + 28] = (ctx->state[7] >> (24 - i * 8)) & 0xff;
     }
 }
 
-static void sha256_file_hex(const char *path, char *hex /*64+1*/) {
+static void sha256_file_hex(const char* path, char* hex /*64+1*/) {
     int fd = open(path, O_RDONLY);
     if (fd < 0) { strcpy(hex, "-"); return; }
 
     SHA256_CTX ctx; sha256_init(&ctx);
-    uint8_t buf[1<<16];
+    uint8_t buf[1 << 16];
     ssize_t n;
     while ((n = read(fd, buf, sizeof(buf))) > 0) {
         sha256_update(&ctx, buf, (size_t)n);
@@ -142,17 +143,17 @@ static void sha256_file_hex(const char *path, char *hex /*64+1*/) {
 
     uint8_t out[32];
     sha256_final(&ctx, out);
-    for (int i=0;i<32;i++) sprintf(hex + i*2, "%02x", out[i]);
+    for (int i = 0; i < 32; i++) sprintf(hex + i * 2, "%02x", out[i]);
     hex[64] = '\0';
 }
 
 /* ===================== utils ===================== */
 #define HASH_LIMIT (30 * 1024 * 1024)
 
-static const char *EXCLUDES[] = {"/proc", "/sys", "/dev", "/run", NULL};
+static const char* EXCLUDES[] = { "/proc", "/sys", "/dev", "/run", NULL };
 
-static int is_excluded(const char *path) {
-    for (int i=0; EXCLUDES[i]; ++i) {
+static int is_excluded(const char* path) {
+    for (int i = 0; EXCLUDES[i]; ++i) {
         size_t len = strlen(EXCLUDES[i]);
         if (strncmp(path, EXCLUDES[i], len) == 0 &&
             (path[len] == '/' || path[len] == '\0')) return 1;
@@ -160,13 +161,13 @@ static int is_excluded(const char *path) {
     return 0;
 }
 
-static void ts_numeric(time_t t, char *buf, size_t sz) {
+static void ts_numeric(time_t t, char* buf, size_t sz) {
     struct tm lt;
     localtime_r(&t, &lt);
     strftime(buf, sz, "%Y%m%d%H%M%S", &lt);
 }
 
-static const char *type_str(mode_t m) {
+static const char* type_str(mode_t m) {
     if (S_ISREG(m)) return "regular";
     if (S_ISDIR(m)) return "directory";
     if (S_ISLNK(m)) return "symlink";
@@ -179,26 +180,26 @@ static const char *type_str(mode_t m) {
 
 /* Mode string like rwxrwxrwx, with suid/sgid/sticky bits reflected (s/S/t/T) */
 static void mode_string(mode_t m, char out[10]) {
-    static const char rwx[] = {'r','w','x'};
-    for (int i=0;i<9;i++) out[i] = '-';
+    static const char rwx[] = { 'r','w','x' };
+    for (int i = 0; i < 9; i++) out[i] = '-';
     out[9] = '\0';
 
-    mode_t bits[3] = { (m>>6)&7, (m>>3)&7, m&7 };
-    for (int u=0; u<3; ++u) {
-        for (int b=0;b<3;b++) {
-            if (bits[u] & (1<<(2-b))) out[u*3+b] = rwx[b];
+    mode_t bits[3] = { (m >> 6) & 7, (m >> 3) & 7, m & 7 };
+    for (int u = 0; u < 3; ++u) {
+        for (int b = 0; b < 3; b++) {
+            if (bits[u] & (1 << (2 - b))) out[u * 3 + b] = rwx[b];
         }
     }
     /* suid/sgid/sticky adjustments */
-    if (m & S_ISUID) out[2] = (out[2]=='x') ? 's' : 'S';
-    if (m & S_ISGID) out[5] = (out[5]=='x') ? 's' : 'S';
-    if (m & S_ISVTX) out[8] = (out[8]=='x') ? 't' : 'T';
+    if (m & S_ISUID) out[2] = (out[2] == 'x') ? 's' : 'S';
+    if (m & S_ISGID) out[5] = (out[5] == 'x') ? 's' : 'S';
+    if (m & S_ISVTX) out[8] = (out[8] == 'x') ? 't' : 'T';
 }
 
 /* CSV escaping: wrap in quotes and double internal quotes */
-static void csv_write_escaped(FILE *f, const char *s) {
+static void csv_write_escaped(FILE* f, const char* s) {
     fputc('"', f);
-    for (const char *p=s; *p; ++p) {
+    for (const char* p = s; *p; ++p) {
         if (*p == '"') fputc('"', f);
         fputc(*p, f);
     }
@@ -210,7 +211,7 @@ static void csv_write_escaped(FILE *f, const char *s) {
 #define QUEUE_CAP 40960
 
 typedef struct {
-    char *items[QUEUE_CAP];
+    char* items[QUEUE_CAP];
     int head, tail;
     int closed;           /* not used for enqueue control; we use inflight to stop */
     unsigned long inflight; /* number of directory tasks enqueued but not yet fully processed */
@@ -220,7 +221,7 @@ typedef struct {
 
 static dir_queue_t Q;
 
-static void q_init(dir_queue_t *q) {
+static void q_init(dir_queue_t* q) {
     q->head = q->tail = 0;
     q->closed = 0;
     q->inflight = 0;
@@ -228,15 +229,15 @@ static void q_init(dir_queue_t *q) {
     pthread_cond_init(&q->cv_nonempty, NULL);
 }
 
-static int q_is_empty(dir_queue_t *q) {
+static int q_is_empty(dir_queue_t* q) {
     return q->head == q->tail;
 }
 
-static int q_is_full(dir_queue_t *q) {
+static int q_is_full(dir_queue_t* q) {
     return ((q->tail + 1) % QUEUE_CAP) == q->head;
 }
 
-static void q_push(dir_queue_t *q, const char *path) {
+static void q_push(dir_queue_t* q, const char* path) {
     pthread_mutex_lock(&q->mtx);
     if (q_is_full(q)) {
         /* fall back: drop silently; or wait—here we print a warning and drop */
@@ -251,11 +252,11 @@ static void q_push(dir_queue_t *q, const char *path) {
     pthread_mutex_unlock(&q->mtx);
 }
 
-static char *q_pop(dir_queue_t *q, int *should_exit) {
+static char* q_pop(dir_queue_t* q, int* should_exit) {
     pthread_mutex_lock(&q->mtx);
     for (;;) {
         if (!q_is_empty(q)) {
-            char *s = q->items[q->head];
+            char* s = q->items[q->head];
             q->head = (q->head + 1) % QUEUE_CAP;
             pthread_mutex_unlock(&q->mtx);
             *should_exit = 0;
@@ -272,7 +273,7 @@ static char *q_pop(dir_queue_t *q, int *should_exit) {
 }
 
 /* called by worker when it completely finished processing one directory */
-static void q_task_done(dir_queue_t *q) {
+static void q_task_done(dir_queue_t* q) {
     pthread_mutex_lock(&q->mtx);
     if (q->inflight > 0) q->inflight--;
     /* if inflight==0, wake all waiters so they can exit */
@@ -283,17 +284,17 @@ static void q_task_done(dir_queue_t *q) {
 
 /* ===================== global output ===================== */
 
-static FILE *g_out = NULL;
+static FILE* g_out = NULL;
 static pthread_mutex_t g_out_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 /* ===================== core processing ===================== */
 
-static void format_join(char out[PATH_MAX], const char *dir, const char *name) {
+static void format_join(char out[PATH_MAX], const char* dir, const char* name) {
     if (strcmp(dir, "/") == 0) snprintf(out, PATH_MAX, "/%s", name);
     else snprintf(out, PATH_MAX, "%s/%s", dir, name);
 }
 
-static void write_file_csv(const char *path, const struct stat *st) {
+static void write_file_csv(const char* path, const struct stat* st) {
     char cbuf[16], mbuf[16], abuf[16], modes[10], hash[65];
     ts_numeric(st->st_ctime, cbuf, sizeof(cbuf));
     ts_numeric(st->st_mtime, mbuf, sizeof(mbuf));
@@ -302,22 +303,22 @@ static void write_file_csv(const char *path, const struct stat *st) {
     if (S_ISREG(st->st_mode) && st->st_size <= HASH_LIMIT) sha256_file_hex(path, hash);
     else strcpy(hash, "-");
 
-    const char *tstr = type_str(st->st_mode);
+    const char* tstr = type_str(st->st_mode);
 
     pthread_mutex_lock(&g_out_mtx);
     csv_write_escaped(g_out, path);
     fprintf(g_out, ",%s,%s,%s,%lld,%s,%s,%s,%u,%u\n",
-            cbuf, mbuf, abuf,
-            (long long)st->st_size,
-            modes,
-            hash,
-            tstr,
-            (unsigned)st->st_uid,
-            (unsigned)st->st_gid);
+        cbuf, mbuf, abuf,
+        (long long)st->st_size,
+        modes,
+        hash,
+        tstr,
+        (unsigned)st->st_uid,
+        (unsigned)st->st_gid);
     pthread_mutex_unlock(&g_out_mtx);
 }
 
-static void process_directory(const char *dirpath) {
+static void process_directory(const char* dirpath) {
     /* Skip excluded roots early */
     if (is_excluded(dirpath)) { q_task_done(&Q); return; }
 
@@ -327,10 +328,10 @@ static void process_directory(const char *dirpath) {
     /* also write the directory itself as a row */
     write_file_csv(dirpath, &st_dir);
 
-    DIR *dp = opendir(dirpath);
+    DIR* dp = opendir(dirpath);
     if (!dp) { q_task_done(&Q); return; }
 
-    struct dirent *de;
+    struct dirent* de;
     char path[PATH_MAX];
 
     while ((de = readdir(dp)) != NULL) {
@@ -344,12 +345,13 @@ static void process_directory(const char *dirpath) {
             continue;
         }
 
-        /* output file/entry row */
-        write_file_csv(path, &st);
-
         /* if it's a directory (not excluded), enqueue */
         if (S_ISDIR(st.st_mode) && !is_excluded(path)) {
             q_push(&Q, path);
+        }
+        else {
+            /* output file/entry row */
+            write_file_csv(path, &st);
         }
         /* don't follow symlinks as directories */
     }
@@ -359,11 +361,11 @@ static void process_directory(const char *dirpath) {
 }
 
 /* worker thread */
-static void *worker(void *arg) {
+static void* worker(void* arg) {
     (void)arg;
     for (;;) {
         int should_exit = 0;
-        char *dir = q_pop(&Q, &should_exit);
+        char* dir = q_pop(&Q, &should_exit);
         if (should_exit) break;
         if (!dir) continue;
         process_directory(dir);
@@ -374,13 +376,28 @@ static void *worker(void *arg) {
 
 /* ===================== main ===================== */
 
-static void make_ts(char *buf, size_t sz) {
+static void make_ts(char* buf, size_t sz) {
     time_t now = time(NULL);
     ts_numeric(now, buf, sz);
 }
 
-int main(int argc, char *argv[]) {
-    const char *start = (argc > 1) ? argv[1] : "/";
+static void print_time() {
+    time_t t;
+    struct tm* tm_info;
+    char buffer[64];
+
+    time(&t);
+    tm_info = localtime(&t);
+
+    // time format YYYY-MM-DD HH:MM:SS
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm_info);
+
+    printf("Time: %s\n", buffer);
+}
+
+
+int main(int argc, char* argv[]) {
+    const char* start = (argc > 1) ? argv[1] : "/";
     int threads = (argc > 2) ? atoi(argv[2]) : 8;
     if (threads <= 0) threads = 8;
 
@@ -401,10 +418,11 @@ int main(int argc, char *argv[]) {
     /* init queue & push start directory */
     q_init(&Q);
     q_push(&Q, start);
+    print_time();
 
     /* create workers */
-    pthread_t *tids = (pthread_t*)calloc((size_t)threads, sizeof(pthread_t));
-    for (int i=0;i<threads;i++) {
+    pthread_t* tids = (pthread_t*)calloc((size_t)threads, sizeof(pthread_t));
+    for (int i = 0; i < threads; i++) {
         if (pthread_create(&tids[i], NULL, worker, NULL) != 0) {
             perror("pthread_create");
             /* continue launching fewer threads */
@@ -412,10 +430,11 @@ int main(int argc, char *argv[]) {
     }
 
     /* wait workers */
-    for (int i=0;i<threads;i++) {
+    for (int i = 0; i < threads; i++) {
         if (tids[i]) pthread_join(tids[i], NULL);
     }
     free(tids);
+    print_time();
 
     fclose(g_out);
     fprintf(stderr, "Done. Output: %s\n", fname);
