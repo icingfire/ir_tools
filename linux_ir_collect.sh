@@ -303,7 +303,7 @@ collect_accounts() {
   save_cmd_output "$OUT_DIR/accounts/ssh/ssh_config.txt" cat /etc/ssh/ssh_config 2>/dev/null || true
 
   # 遍历用户家目录收集 SSH 授权、历史、profile 等
-  awk -F: '{print $1" "$3" "$6}' /etc/passwd | while read -r USERNAME UID HOME; do
+  awk -F: '{print $1" "$3" "$6}' /etc/passwd | while read -r USERNAME USERID HOME; do
     [[ -z "$HOME" || ! -d "$HOME" ]] && continue
     SAFE_USER=$(echo "$USERNAME" | tr -c 'A-Za-z0-9._-' '_')
     UDIR="$OUT_DIR/accounts/users/$SAFE_USER"
