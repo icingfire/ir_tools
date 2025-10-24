@@ -1,9 +1,9 @@
 /*
 * a tool for collect file info like: ctime/mtime/atime/mode/permit/hash ...
 *
-* compile: gcc -O2 -static -pthread -o fs_collect linux_fs_collect.c
-* usage: ./fs_collect
-* usage: ./fs_collect /$target_dir $thread_cnt    // default: / 8
+* compile: gcc -O2 -static -pthread -o timeline linux_timeline.c
+* usage: ./timeline
+* usage: ./timeline -s $start_path -o $output_path -t $thread_cnt    // default: /  ./  8
 *
 * author: icingfire
 */
@@ -397,14 +397,42 @@ static void print_time() {
 
 
 int main(int argc, char* argv[]) {
-    const char* start = (argc > 1) ? argv[1] : "/";
-    int threads = (argc > 2) ? atoi(argv[2]) : 8;
-    if (threads <= 0) threads = 8;
+
+    char *start_path = "/";
+    char *output_path = ".";
+    int threads = 8;
+    int opt;
+	int silent = 0;
+
+    while ((opt = getopt(argc, argv, "s:o:t:S")) != -1) {
+        switch (opt) {
+            case 's':
+                start_path = optarg;
+                int t_len = strlen(start_path);
+                if (start_path[t_len-1] == '/')
+                    start_path[t_len-1] = 0;
+                break;
+            case 'o':
+                output_path = optarg;
+                break;
+            case 't':
+                threads = atoi(optarg);
+                break;
+            case 'S':
+                silent = 1;
+                break;
+            default:
+                fprintf(stderr, "Usage: %s [-s search_path] [-o output_path] [-t threads]\n", argv[0]);
+                return 1;
+        }
+    }
+	
+	
 
     /* build output file name with timestamp */
     char ts[32], fname[128];
     make_ts(ts, sizeof(ts));
-    snprintf(fname, sizeof(fname), "fs_collect_%s.csv", ts);
+    snprintf(fname, sizeof(fname), "%s/timeline_%s.csv", output_path, ts);
 
     g_out = fopen(fname, "w");
     if (!g_out) {
@@ -417,8 +445,9 @@ int main(int argc, char* argv[]) {
 
     /* init queue & push start directory */
     q_init(&Q);
-    q_push(&Q, start);
-    print_time();
+    q_push(&Q, start_path);
+    if (silent == 0)
+        print_time();
 
     /* create workers */
     pthread_t* tids = (pthread_t*)calloc((size_t)threads, sizeof(pthread_t));
@@ -434,9 +463,12 @@ int main(int argc, char* argv[]) {
         if (tids[i]) pthread_join(tids[i], NULL);
     }
     free(tids);
-    print_time();
-
-    fclose(g_out);
-    fprintf(stderr, "Done. Output: %s\n", fname);
+	fclose(g_out);
+	
+    if (silent == 0) {
+        print_time();
+        fprintf(stderr, "Done. Output: %s\n", fname);
+    }
+    
     return 0;
 }
